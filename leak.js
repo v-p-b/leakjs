@@ -9,18 +9,17 @@ http.createServer(function(req, res) {
     if (req.url == '/fileupload') {
         var form = new formidable.IncomingForm();
         form.parse(req, function(err, fields, files) {
-            try{
-                var transform=sharp();
-                transform.resize(200,200);
-                transform.png();            
-                instream = fs.createReadStream(files.filetoupload.path).pipe(transform);
-                res.setHeader("Content-Type","image.png");
-                instream.pipe(res);
-            }catch(error){
-                console.log(error);
-                res.write("Error during image transform!");
+            var transform=sharp();
+            transform.resize(200,200);
+            transform.png();            
+            transform.on('error', (err) => {
+                console.log(err); 
+                res.write('Error during image transformation!'); 
                 res.end();
-            }
+            });
+            instream = fs.createReadStream(files.filetoupload.path).pipe(transform);
+            res.setHeader("Content-Type","image/png");
+            instream.pipe(res);
         });
     } else {
         res.writeHead(200, {
