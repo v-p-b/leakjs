@@ -1,6 +1,7 @@
 var http = require('http');
 var formidable = require('formidable');
 var fs = require('fs');
+var sharp = require('sharp');
 
 http.createServer(function(req, res) {
 
@@ -8,13 +9,18 @@ http.createServer(function(req, res) {
     if (req.url == '/fileupload') {
         var form = new formidable.IncomingForm();
         form.parse(req, function(err, fields, files) {
-            var oldpath = files.filetoupload.path;
-            var newpath = '/app/instance/uploads/' + files.filetoupload.name; // Unsanitized!
-            fs.rename(oldpath, newpath, function(err) {
-                if (err) throw err;
-                res.write('File uploaded and moved!');
+            try{
+                var transform=sharp();
+                transform.resize(200,200);
+                transform.png();            
+                instream = fs.createReadStream(files.filetoupload.path).pipe(transform);
+                res.setHeader("Content-Type","image.png");
+                instream.pipe(res);
+            }catch(error){
+                console.log(error);
+                res.write("Error during image transform!");
                 res.end();
-            });
+            }
         });
     } else {
         res.writeHead(200, {
